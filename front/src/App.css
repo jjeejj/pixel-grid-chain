@@ -1,0 +1,19 @@
+.App {
+  text-align: center;
+}
+
+/* 确保ConnectButton组件样式正确 */
+.connect-button-container {
+  margin-top: 15px;
+}
+
+/* 确保在移动设备上的响应式布局 */
+@media (max-width: 500px) {
+  .connect-button-container {
+    width: 100%;
+  }
+  
+  .color-picker {
+    justify-content: center;
+  }
+}

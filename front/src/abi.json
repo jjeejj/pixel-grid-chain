@@ -1,0 +1,60 @@
+[
+    {
+        "type": "constructor",
+        "inputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "buyEarth",
+        "inputs": [
+            {
+                "name": "_idx",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "color",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "imageUrl",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "payable"
+    },
+    {
+        "type": "function",
+        "name": "getEarths",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "tuple[100]",
+                "internalType": "struct BuyEarth.Earth[100]",
+                "components": [
+                    {
+                        "name": "color",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "price",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "image_url",
+                        "type": "string",
+                        "internalType": "string"
+                    }
+                ]
+            }
+        ],
+        "stateMutability": "view"
+    }
+]
