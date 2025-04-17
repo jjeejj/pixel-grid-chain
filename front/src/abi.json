@@ -56,5 +56,36 @@
             }
         ],
         "stateMutability": "view"
+    },
+    {
+        "type": "event",
+        "name": "EarthPurchased",
+        "inputs": [
+            {
+                "name": "idx",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
+            },
+            {
+                "name": "color",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "buyer",
+                "type": "address",
+                "indexed": false,
+                "internalType": "address"
+            },
+            {
+                "name": "price",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
     }
 ]

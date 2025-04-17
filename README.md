@@ -1,128 +1,82 @@
-# Pixel Grid Chain
+# PixelGrid - 区块链像素艺术平台
 
-一个基于区块链的像素地球购买和定制平台。
+PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以购买、自定义并拥有网格中的像素方块。每个方块都可以设置颜色和上传图片，所有权记录在区块链上，确保数字资产的真实性和永久性。
 
-体验地址：https://pixel-grid-chain.vercel.app/
+## 项目特点
 
-## 项目概述
-
-Pixel Grid Chain 是一个去中心化应用程序(dApp)，允许用户购买虚拟地球上的像素格子，并通过选择颜色和添加图片链接来自定义它们。这个项目结合了区块链技术与互动式网页界面，创建了一个独特的数字资产所有权体验。
+- **区块链所有权**: 每个像素方块的所有权通过智能合约记录在区块链上
+- **个性化定制**: 为您的方块设置独特颜色和上传个性化图片
+- **社交媒体集成**: 支持Twitter和GitHub头像获取
+- **用户友好界面**: 直观的界面设计，轻松浏览和交互
+- **响应式设计**: 完美适配桌面和移动设备
 
 ## 技术栈
 
-### 后端/智能合约
-- **Solidity**: 用于编写智能合约
-- **Foundry**: 智能合约开发框架
-- **Monad 测试网**: 部署目标环境
-
-### 前端
-- **React**: 用户界面框架
-- **Vite**: 构建工具
-- **RainbowKit**: 钱包连接组件
-- **Wagmi**: 以太坊 React Hooks
-- **Viem**: 与以太坊交互的库
-- **Styled Components**: CSS-in-JS 样式解决方案
-
-## 功能特点
-
-- 购买 10x10 网格中的像素格子
-- 为每个格子选择自定义颜色
-- 为格子添加自定义图片链接
-- 支持钱包连接与区块链交互
-- 实时显示所有已购买格子的状态
-
-## 支持的钱包
-
-- MetaMask
-- Coinbase Wallet
-- Rabby Wallet
+| 类别 | 技术 | 用途 |
+|------|------|------|
+| 前端框架 | React | UI构建与渲染 |
+| 状态管理 | React Hooks | 管理组件状态 |
+| 样式处理 | Styled Components | 组件级CSS样式 |
+| Web3连接 | wagmi、RainbowKit | 简化钱包连接流程 |
+| 合约交互 | viem | 处理智能合约调用 |
+| 区块链网络 | Monad | 存储数字资产 |
 
 ## 安装与运行
 
-### 智能合约部分
+1. **克隆仓库**
+   ```bash
+   git clone https://github.com/yourusername/pixel-grid-chain.git
+   cd pixel-grid-chain
+   ```
 
-1. 克隆仓库
-```bash
-git clone https://github.com/yourusername/pixel-grid-chain.git
-cd pixel-grid-chain
-```
+2. **安装依赖**
+   ```bash
+   # 安装前端依赖
+   cd front
+   npm install
+   
+   # 安装智能合约依赖
+   cd ../contracts
+   npm install
+   ```
 
-2. 安装依赖
-```bash
-forge install
-```
+3. **启动开发服务器**
+   ```bash
+   # 在front目录下
+   npm run dev
+   ```
 
-3. 编译智能合约
-```bash
-forge build
-```
+4. **部署智能合约(可选)**
+   ```bash
+   # 在contracts目录下
+   npx hardhat compile
+   npx hardhat deploy --network <your-network>
+   ```
 
-4. 部署智能合约
-```bash
-forge script script/DeployBuyEarth.s.sol --rpc-url <RPC_URL> --private-key <PRIVATE_KEY>
-```
+## 使用指南
 
-### 前端部分
-
-1. 进入前端目录
-```bash
-cd front
-```
-
-2. 安装依赖
-```bash
-npm install
-```
-
-3. 开发模式运行
-```bash
-npm run dev
-```
-
-4. 构建生产版本
-```bash
-npm run build
-```
-
-## 使用方法
-
-1. 连接您的加密钱包 (MetaMask、Coinbase Wallet 或 Rabby Wallet)
-2. 在网格上选择一个空闲的像素格子
-3. 在弹出的表单中选择颜色并输入图片 URL
-4. 确认支付 0.01 MON (Monad 测试网代币)
-5. 交易确认后，您的像素格子将显示您选择的颜色和图片
-
-## 项目结构
-
-```
-pixel-grid-chain/
-├── src/                  # 智能合约源代码
-│   └── BuyEarth.sol      # 主要合约文件
-├── front/                # 前端应用
-│   ├── src/              # React 源代码
-│   ├── public/           # 静态资源
-│   └── index.html        # HTML 入口
-├── script/               # 部署脚本
-├── test/                 # 合约测试
-└── foundry.toml          # Foundry 配置
-```
+1. **连接钱包**: 点击右上角的"连接钱包"按钮，选择您的Web3钱包
+2. **浏览像素网格**: 在主界面查看10x10的像素网格，已购买的方块会显示颜色或图片
+3. **购买方块**: 点击未购买的方块，选择颜色或上传图片后完成购买
+4. **管理方块**: 已购买的方块可以随时更新颜色和图片
 
 ## 贡献指南
 
-欢迎贡献代码、报告问题或提出改进建议。请遵循以下步骤：
+欢迎为PixelGrid项目做出贡献！请遵循以下步骤：
 
-1. Fork 项目仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+1. Fork本仓库
+2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
-
-## 许可证
-
-该项目采用 MIT 许可证 - 详情请查看 [LICENSE](LICENSE) 文件。
+5. 打开一个Pull Request
 
 ## 联系方式
 
-项目维护者: [您的名字] - [您的邮箱]
+如有任何问题或建议，请通过以下方式联系我们：
 
-项目链接: [https://github.com/yourusername/pixel-grid-chain](https://github.com/yourusername/pixel-grid-chain) 
+- 项目仓库: [GitHub](https://github.com/yourusername/pixel-grid-chain)
+- 电子邮件: your.email@example.com
+
+## 许可证
+
+本项目采用MIT许可证 - 详情请查看 [LICENSE](LICENSE) 文件 
