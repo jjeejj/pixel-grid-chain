@@ -56,7 +56,7 @@ const Toast = ({ message, isVisible, onClose, type = "info" }) => {
 };
 
 const App = () => {
-  const [selectedColor, setSelectedColor] = useState(1); // 默认选择红色
+  const [selectedColor, setSelectedColor] = useState(0); // 默认不选颜色
   const [selectedTile, setSelectedTile] = useState(null);
   const [earthData, setEarthData] = useState(Array(100).fill({ color: 0, price: 0, image_url: "" }));
   const [imageUrl, setImageUrl] = useState("");
@@ -107,7 +107,7 @@ const App = () => {
   });
 
   // 购买方块
-  const { write: buyEarthWrite, data: buyEarthData } = useContractWrite({
+  const { write: buyEarthWrite, data: buyEarthData, error: writeError, isError: isWriteError } = useContractWrite({
     address: contractAddress,
     abi: contractABI,
     functionName: 'buyEarth',
@@ -115,18 +115,33 @@ const App = () => {
   });
 
   // 等待交易完成
-  const { isLoading, isSuccess } = useWaitForTransaction({
+  const { isLoading, isSuccess, isError, error } = useWaitForTransaction({
     hash: buyEarthData?.hash,
+    onError: (error) => {
+      console.error("等待交易时出错:", error);
+      handleTransactionError(error);
+    }
   });
 
-  // 当交易成功时刷新数据
+  // 处理写入错误
+  useEffect(() => {
+    if (isWriteError && writeError) {
+      console.error("合约写入错误:", writeError);
+      handleTransactionError(writeError);
+    }
+  }, [isWriteError, writeError]);
+
+  // 当交易成功时刷新数据，或处理错误
   useEffect(() => {
     if (isSuccess) {
       refetch();
       setSelectedTile(null);
-      showToast("方块购买成功！", "info");
+      showToast("Purchase successful!", "info");
+    } else if (isError && error) {
+      console.error("Transaction error:", error);
+      handleTransactionError(error);
     }
-  }, [isSuccess, refetch]);
+  }, [isSuccess, isError, error, refetch]);
 
   // 当合约数据更新时更新UI
   useEffect(() => {
@@ -139,11 +154,11 @@ const App = () => {
           );
         };
         
-        console.log("从合约获取到的数据:", safeStringify(earthsData));
+        console.log("Contract data:", safeStringify(earthsData));
         
         // 检查一下第一个方块的数据
         if (earthsData[0]) {
-          console.log("第一个方块数据:", {
+          console.log("First tile data:", {
             color: Number(earthsData[0].color),
             price: Number(earthsData[0].price),
             image_url: earthsData[0].image_url
@@ -156,10 +171,10 @@ const App = () => {
           image_url: earth.image_url
         }));
         
-        console.log("处理后的方块数据:", earthDataArray[0]);
+        console.log("Processed tile data:", earthDataArray[0]);
         setEarthData(earthDataArray);
       } catch (error) {
-        console.error("处理合约数据时出错:", error);
+        console.error("Error processing contract data:", error);
         // 仍然尝试正常设置数据，即使日志有问题
         const earthDataArray = Array.from(earthsData).map(earth => ({
           color: Number(earth.color),
@@ -201,7 +216,7 @@ const App = () => {
   // 获取头像URL
   const handleGetAvatarUrl = async () => {
     if (!username) {
-      showToast("请输入用户名或URL", "error");
+      showToast("Please enter a username or URL", "error");
       return;
     }
     
@@ -222,9 +237,9 @@ const App = () => {
           if (!username.startsWith('http')) {
             avatarUrl = `https://${username.replace(/^\/+/, '')}`;
           }
-          showToast("检测到Twitter头像URL", "info");
+          showToast("Twitter avatar URL detected", "info");
         } else if (!isValidUrl(username)) {
-          showToast("请输入有效的URL", "error");
+          showToast("Please enter a valid URL", "error");
           return;
         } else {
           avatarUrl = username;
@@ -233,9 +248,9 @@ const App = () => {
       } else {
         // 显示加载中提示
         if (platform === 'twitter') {
-          showToast("正在尝试获取Twitter头像，请稍候...", "info");
+          showToast("Fetching Twitter avatar, please wait...", "info");
         } else {
-          showToast(`正在获取${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像...`, "info");
+          showToast(`Fetching ${platform === 'github' ? 'GitHub' : 'X(Twitter)'} avatar...`, "info");
         }
         
         // 使用社交媒体API获取头像 - 异步方式
@@ -246,15 +261,15 @@ const App = () => {
           // 检查Twitter头像获取是否成功
           if (platform === 'twitter' && !avatarUrl) {
             setTwitterFetchFailed(true);
-            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+            showToast("Failed to fetch Twitter avatar, please try manual method", "error");
             return;
           }
         } catch (error) {
-          console.error("头像获取失败:", error);
+          console.error("Avatar fetch failed:", error);
           
           if (platform === 'twitter') {
             setTwitterFetchFailed(true);
-            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+            showToast("Failed to fetch Twitter avatar, please try manual method", "error");
             return;
           }
           
@@ -266,9 +281,9 @@ const App = () => {
         if (!avatarUrl) {
           if (platform === 'twitter') {
             setTwitterFetchFailed(true);
-            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+            showToast("Failed to fetch Twitter avatar, please try manual method", "error");
           } else {
-            showToast(`获取${platform === 'github' ? 'GitHub' : ''}头像失败`, "error");
+            showToast(`Failed to fetch ${platform === 'github' ? 'GitHub' : ''} avatar`, "error");
           }
           return;
         }
@@ -280,18 +295,18 @@ const App = () => {
       setImageUrl(avatarUrl);
       showToast(
         platform === "custom" 
-          ? "已成功获取自定义图片" 
-          : `已成功获取${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像`, 
+          ? "Custom image fetched successfully" 
+          : `${platform === 'github' ? 'GitHub' : 'X(Twitter)'} avatar fetched successfully`, 
         "info"
       );
     } catch (error) {
-      console.error("获取头像URL失败:", error);
+      console.error("Error fetching avatar URL:", error);
       
       if (platform === 'twitter') {
         setTwitterFetchFailed(true);
-        showToast("获取Twitter头像失败，请尝试手动获取", "error");
+        showToast("Failed to fetch Twitter avatar, please try manual method", "error");
       } else {
-        showToast("获取头像URL失败，请尝试其他平台或自定义URL", "error");
+        showToast("Failed to fetch avatar URL, please try another platform or custom URL", "error");
       }
       
       setShowPreview(false);
@@ -311,39 +326,103 @@ const App = () => {
   // 处理方块点击
   const handleTileClick = (index) => {
     if (!isConnected) {
-      showToast("请先连接钱包", "error");
+      showToast("Please connect your wallet first", "error");
       return;
     }
 
-    console.log(`点击方块 #${index}:`, earthData[index]);
+    console.log(`Clicked tile #${index}:`, earthData[index]);
 
     // 检查方块是否已被购买
-    if (earthData[index].color !== 0) {
-      showToast("这个方块已经被购买了", "error");
+    const earth = earthData[index];
+    const hasColor = earth.color !== 0;
+    const hasImage = earth.image_url && earth.image_url.trim() !== "";
+    const isPurchased = hasColor || hasImage;
+    
+    if (isPurchased) {
+      showToast("This tile has already been purchased", "error");
       return;
     }
 
     setSelectedTile(index);
-    showToast(`已选择方块 #${index}`, "info");
+    showToast(`Tile #${index} selected`, "info");
   };
 
   // 处理购买方块
   const handleBuyEarth = () => {
     if (selectedTile === null) {
-      showToast("请先选择一个方块", "error");
+      showToast("Please select a tile first", "error");
       return;
     }
 
-    // 移除图片URL的必填验证
-    // 如果为空，使用空字符串
-    const finalImageUrl = imageUrl.trim() || "";
+    // 检查是否选择了颜色或提供了图片URL
+    const hasColor = selectedColor !== 0;
+    const hasImage = imageUrl.trim() !== "";
+    
+    if (!hasColor && !hasImage) {
+      showToast("Please select a color or provide an image URL", "error");
+      return;
+    }
 
-    // 如果是自定义颜色，使用颜色值的哈希作为颜色ID
-    const colorId = selectedColor === 7 ? 7 : selectedColor;
+    // 使用颜色值，如果是0（未选择）或7（自定义），需要特殊处理
+    const colorId = selectedColor;
+    const finalImageUrl = imageUrl.trim();
 
-    buyEarthWrite({
-      args: [selectedTile, colorId, finalImageUrl],
-    });
+    // 显示正在处理的提示
+    showToast("Processing transaction...", "info");
+
+    try {
+      const config = {
+        args: [selectedTile, colorId, finalImageUrl],
+        onSettled: (data, error) => {
+          if (error) {
+            console.error("Transaction error:", error);
+            // 处理错误
+            handleTransactionError(error);
+          }
+        }
+      };
+      
+      buyEarthWrite(config);
+    } catch (error) {
+      console.error("购买方块错误:", error);
+      handleTransactionError(error);
+    }
+  };
+
+  // 处理交易错误的统一函数
+  const handleTransactionError = (error) => {
+    console.error("交易错误详情:", error);
+    
+    // 错误消息
+    let errorMessage = "Transaction failed";
+    
+    // 检查各种可能的错误格式和位置
+    const errorStr = JSON.stringify(error).toLowerCase();
+    
+    if (
+      errorStr.includes("insufficient funds") || 
+      errorStr.includes("exceeds the balance") ||
+      errorStr.includes("gas * price + value")
+    ) {
+      errorMessage = "Insufficient funds in your wallet. Please add more token to cover gas fees and purchase price.";
+    } else if (errorStr.includes("user rejected")) {
+      errorMessage = "Transaction rejected by user.";
+    }
+    
+    // 显示友好的错误消息
+    showToast(errorMessage, "error");
+  };
+
+  // 处理颜色选择
+  const handleColorSelection = (colorValue) => {
+    if (selectedColor === colorValue) {
+      // 如果用户点击已选中的颜色，取消选择
+      setSelectedColor(0);
+      showToast("Color deselected", "info");
+    } else {
+      setSelectedColor(colorValue);
+      showToast(`Color ${colorMap[colorValue]} selected`, "info");
+    }
   };
 
   // 处理自定义颜色变化
@@ -352,33 +431,61 @@ const App = () => {
     setSelectedColor(7); // 自动选择自定义颜色选项
   };
 
+  // 创建背景颜色层组件
+  const ColorBackground = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: ${props => props.color};
+    opacity: ${props => props.$hasImage ? 0.7 : 1}; // 降低透明度，使背景更模糊但仍可见
+    border-radius: 3px;
+    z-index: 1; // 背景层在图片下面
+    pointer-events: none; // 避免影响点击事件
+  `;
+
   // 渲染10x10网格
   const renderGrid = () => {
     return (
       <Grid>
         {Array(100).fill(0).map((_, index) => {
           const earth = earthData[index];
-          // 处理自定义颜色的情况
-          let color;
-          if (earth.color === 7) {
-            // 对于自定义颜色，使用紫色作为默认显示
-            color = earth.color !== 0 ? "#FF00FF" : '#FFFFFF';
+          // 检查是否有颜色和图片
+          const hasColor = earth.color !== 0;
+          const hasImage = earth.image_url && earth.image_url.trim() !== "";
+          
+          // 确定背景颜色
+          let backgroundColor;
+          if (hasColor) {
+            if (earth.color === 7) {
+              // 对于自定义颜色，使用紫色作为默认显示
+              backgroundColor = "#FF00FF";
+            } else {
+              backgroundColor = colorMap[earth.color];
+            }
           } else {
-            color = earth.color !== 0 ? colorMap[earth.color] : '#FFFFFF';
+            // 如果没有颜色，使用白色作为背景
+            backgroundColor = '#FFFFFF';
           }
+          
           const isSelected = selectedTile === index;
-          const isPurchased = earth.color !== 0;
-          const hasImage = isPurchased && earth.image_url && earth.image_url.trim() !== "";
+          // 一个方块被认为是已购买的条件：有颜色或有图片
+          const isPurchased = hasColor || hasImage;
 
           return (
             <Tile
               key={index}
-              color={color}
               $isSelected={isSelected}
               onClick={() => handleTileClick(index)}
               $purchased={isPurchased}
             >
-              {hasImage && <TileImage src={earth.image_url} alt={`Tile ${index}`} />}
+              {/* 始终添加背景颜色层 */}
+              <ColorBackground 
+                color={hasColor ? backgroundColor : '#FFFFFF'} 
+                $hasImage={hasImage}
+              />
+              {hasImage && <TileImage src={earth.image_url} alt={`Tile ${index}`} $hasColor={hasColor} />}
             </Tile>
           );
         })}
@@ -399,8 +506,8 @@ const App = () => {
           <Logo>
             <LogoIcon>🧩</LogoIcon>
             <LogoTextGroup>
-              <LogoText>像素格子</LogoText>
-              <LogoSubtitle>基于区块链技术的像素艺术画布</LogoSubtitle>
+              <LogoText>Pixel Grid</LogoText>
+              <LogoSubtitle>Blockchain-based pixel art canvas</LogoSubtitle>
             </LogoTextGroup>
           </Logo>
           <WalletSection>
@@ -414,20 +521,102 @@ const App = () => {
                   <NetworkInfo>
                     <ConnectionStatus $connected={isConnected}>
                       <StatusDot $connected={isConnected} />
-                      已连接
+                      Connected
                     </ConnectionStatus>
                     {chain && <NetworkName>{chain.name}</NetworkName>}
                   </NetworkInfo>
                 </WalletInfo>
                 <LogoutButton onClick={disconnect}>
                   <LogoutIcon>⏏️</LogoutIcon>
-                  <span>退出</span>
+                  <span>Logout</span>
                 </LogoutButton>
               </WalletConnected>
             ) : (
               <WalletConnectContainer>
                 <ConnectIcon>🔗</ConnectIcon>
-                <ConnectButton />
+                <ConnectButton.Custom>
+                  {({
+                    account,
+                    chain,
+                    openAccountModal,
+                    openChainModal,
+                    openConnectModal,
+                    authenticationStatus,
+                    mounted,
+                  }) => {
+                    // 注意: 如果您的应用不使用身份验证，可以删除这些条件
+                    const ready = mounted && authenticationStatus !== 'loading';
+                    const connected =
+                      ready &&
+                      account &&
+                      chain &&
+                      (!authenticationStatus ||
+                        authenticationStatus === 'authenticated');
+
+                    return (
+                      <div
+                        {...(!ready && {
+                          'aria-hidden': true,
+                          'style': {
+                            opacity: 0,
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                          },
+                        })}
+                      >
+                        {(() => {
+                          if (!connected) {
+                            return (
+                              <EnhancedConnectButton onClick={openConnectModal} type="button">
+                                <WalletIcon>👛</WalletIcon>
+                                Connect Wallet
+                              </EnhancedConnectButton>
+                            );
+                          }
+
+                          return (
+                            <div style={{ display: 'flex', gap: 12 }}>
+                              <button
+                                onClick={openChainModal}
+                                style={{ display: 'flex', alignItems: 'center' }}
+                                type="button"
+                              >
+                                {chain.hasIcon && (
+                                  <div
+                                    style={{
+                                      background: chain.iconBackground,
+                                      width: 12,
+                                      height: 12,
+                                      borderRadius: 999,
+                                      overflow: 'hidden',
+                                      marginRight: 4,
+                                    }}
+                                  >
+                                    {chain.iconUrl && (
+                                      <img
+                                        alt={chain.name ?? 'Chain icon'}
+                                        src={chain.iconUrl}
+                                        style={{ width: 12, height: 12 }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                {chain.name}
+                              </button>
+
+                              <button onClick={openAccountModal} type="button">
+                                {account.displayName}
+                                {account.displayBalance
+                                  ? ` (${account.displayBalance})`
+                                  : ''}
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  }}
+                </ConnectButton.Custom>
               </WalletConnectContainer>
             )}
           </WalletSection>
@@ -437,7 +626,7 @@ const App = () => {
           {renderGrid()}
 
           <ControlPanel>
-            <ColorSelectionTitle>选择颜色</ColorSelectionTitle>
+            <ColorSelectionTitle>Select Color</ColorSelectionTitle>
             <ColorSelection>
               <ColorPicker>
                 {Object.entries(colorMap).map(([value, color]) => {
@@ -448,17 +637,17 @@ const App = () => {
                       <CustomColorContainer 
                         key={value} 
                         $selected={selectedColor === intValue} 
-                        onClick={() => setSelectedColor(intValue)}
+                        onClick={() => handleColorSelection(value)}
                       >
-                        <CustomColorLabel>自定义</CustomColorLabel>
+                        <CustomColorLabel>Custom</CustomColorLabel>
                         <CustomColorInput
                           type="color"
                           value={customColor}
                           onChange={handleCustomColorChange}
-                          title="点击选择自定义颜色"
+                          title="Click to select a custom color"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedColor(intValue);
+                            handleColorSelection(value);
                           }}
                         />
                       </CustomColorContainer>
@@ -470,7 +659,7 @@ const App = () => {
                       key={value}
                       color={color}
                       $selected={selectedColor === intValue}
-                      onClick={() => setSelectedColor(intValue)}
+                      onClick={() => handleColorSelection(value)}
                     >
                       {selectedColor === intValue && (
                         <HandprintIcon viewBox={handprintIcon.viewBox}>
@@ -486,19 +675,9 @@ const App = () => {
             <ConnectButtonWrapper>
               {isConnected ? (
                 <PurchaseContainer>
-                  <InputContainer>
-                    <InputLabel>图片URL</InputLabel>
-                    <Input
-                      type="text"
-                      placeholder="输入图片URL"
-                      value={imageUrl}
-                      onChange={handleImageUrlChange}
-                    />
-                  </InputContainer>
-
                   {/* 社交媒体头像获取部分 */}
                   <SocialAvatarContainer>
-                    <SocialAvatarTitle>使用社交媒体头像</SocialAvatarTitle>
+                    <SocialAvatarTitle>Use Social Media Avatar</SocialAvatarTitle>
                     <SocialInputGroup>
                       <SocialSelect 
                         value={platform} 
@@ -506,25 +685,25 @@ const App = () => {
                       >
                         <option value="github">GitHub</option>
                         <option value="twitter">X (Twitter)</option>
-                        <option value="custom">自定义URL</option>
+                        <option value="custom">Custom URL</option>
                       </SocialSelect>
                       <SocialInput
                         type="text"
-                        placeholder={platform === 'custom' ? '输入图片URL' : `输入${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 用户名`}
+                        placeholder={platform === 'custom' ? 'Enter image URL' : `Enter ${platform === 'github' ? 'GitHub' : 'X(Twitter)'} username`}
                         value={username}
                         onChange={handleUsernameChange}
                       />
                       <SocialButton onClick={handleGetAvatarUrl}>
-                        获取头像
+                        Get Avatar
                       </SocialButton>
                     </SocialInputGroup>
                     
                     {/* 平台提示信息 - 只在获取失败时显示 */}
                     {platform === 'twitter' && twitterFetchFailed && (
                       <PlatformNote>
-                        <TwitterTipHeading>🔍 获取失败，请尝试手动方法</TwitterTipHeading>
+                        <TwitterTipHeading>🔍 Fetch Failed, Try Manual Method</TwitterTipHeading>
                         <TwitterTipText>
-                          Twitter头像获取失败，请按照以下步骤手动获取:
+                          Twitter avatar fetch failed, follow these steps to get it manually:
                         </TwitterTipText>
                         <TwitterStepList>
                           <TwitterStep>
@@ -533,28 +712,28 @@ const App = () => {
                               onClick={() => window.open(`https://x.com/${username}/photo`, '_blank')}
                               disabled={!username}
                             >
-                              打开Twitter照片页面
+                              Open Twitter Photo Page
                             </TwitterLinkButton>
                           </TwitterStep>
                           <TwitterStep>
-                            <span>2.</span> 在照片页面上右键图片 → 选择"复制图片地址"
+                            <span>2.</span> Right-click on the image → Select "Copy Image Address"
                           </TwitterStep>
                           <TwitterStep>
                             <span>3.</span> 
                             <TwitterActionButton
                               onClick={() => {
                                 setPlatform('custom');
-                                showToast('已切换到自定义URL模式，请粘贴Twitter图片地址', 'info');
+                                showToast('Switched to Custom URL mode, please paste Twitter image address', 'info');
                               }}
                             >
-                              切换到自定义URL模式
+                              Switch to Custom URL
                             </TwitterActionButton>
                           </TwitterStep>
                           <TwitterStep>
-                            <span>4.</span> 粘贴刚才复制的图片地址 → 点击"获取头像"
+                            <span>4.</span> Paste the copied image URL → Click "Get Avatar"
                           </TwitterStep>
                           <TwitterTipHighlight>
-                            图片地址应以 "pbs.twimg.com/profile_images" 开头
+                            Image URL should start with "pbs.twimg.com/profile_images"
                           </TwitterTipHighlight>
                         </TwitterStepList>
                       </PlatformNote>
@@ -564,31 +743,31 @@ const App = () => {
                     {showPreview && (
                       <PreviewContainer>
                         <PreviewHeader>
-                          <PreviewTitle>预览</PreviewTitle>
+                          <PreviewTitle>Preview</PreviewTitle>
                           <ClosePreviewButton onClick={resetPreview}>✕</ClosePreviewButton>
                         </PreviewHeader>
                         <ImagePreview>
                           <PreviewImage 
                             src={previewUrl} 
-                            alt="头像预览"
+                            alt="Avatar preview"
                             onError={() => {
-                              showToast("图片加载失败", "error");
+                              showToast("Failed to load image", "error");
                               setShowPreview(false);
                             }}
                           />
                         </ImagePreview>
                         <PreviewInfo>
                           <PreviewText>
-                            {platform === 'custom' ? '自定义图片' : 
-                              `${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像: ${username}`}
+                            {platform === 'custom' ? 'Custom image' : 
+                              `${platform === 'github' ? 'GitHub' : 'X(Twitter)'} avatar: ${username}`}
                           </PreviewText>
                           <ApplyButton 
                             onClick={() => {
                               setImageUrl(previewUrl);
-                              showToast("已应用到图片URL", "info");
+                              showToast("Applied to image URL", "info");
                             }}
                           >
-                            应用
+                            Apply
                           </ApplyButton>
                         </PreviewInfo>
                       </PreviewContainer>
@@ -599,13 +778,52 @@ const App = () => {
                     onClick={handleBuyEarth}
                     disabled={selectedTile === null || isLoading}
                   >
-                    {isLoading ? '处理中...' : '购买方块'}
+                    {isLoading ? 'Processing...' : 'Buy Tile'}
                   </BuyButton>
                 </PurchaseContainer>
               ) : (
                 <NotConnectedContainer>
-                  <PlaceholderText>请先连接钱包以购买方块</PlaceholderText>
-                  <ConnectButton />
+                  <WalletPromptIcon>👛</WalletPromptIcon>
+                  <WalletPromptTitle>Connect Your Wallet</WalletPromptTitle>
+                  <PlaceholderText>Please connect your wallet to buy tiles</PlaceholderText>
+                  <ConnectButton.Custom>
+                    {({
+                      account,
+                      chain,
+                      openAccountModal,
+                      openChainModal,
+                      openConnectModal,
+                      authenticationStatus,
+                      mounted,
+                    }) => {
+                      const ready = mounted && authenticationStatus !== 'loading';
+                      const connected =
+                        ready &&
+                        account &&
+                        chain &&
+                        (!authenticationStatus || authenticationStatus === 'authenticated');
+
+                      return (
+                        <div
+                          {...(!ready && {
+                            'aria-hidden': true,
+                            'style': {
+                              opacity: 0,
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                            },
+                          })}
+                        >
+                          {!connected && (
+                            <EnhancedConnectButton onClick={openConnectModal} type="button">
+                              <WalletIcon>👛</WalletIcon>
+                              Connect Wallet
+                            </EnhancedConnectButton>
+                          )}
+                        </div>
+                      );
+                    }}
+                  </ConnectButton.Custom>
                 </NotConnectedContainer>
               )}
             </ConnectButtonWrapper>
@@ -784,7 +1002,7 @@ const WalletConnected = styled.div`
   align-items: center;
   background-color: rgba(52, 152, 219, 0.08);
   border-radius: 12px;
-  padding: 6px 10px;
+  padding: 12px 15px;
   border: 1px solid rgba(52, 152, 219, 0.2);
   gap: 10px;
 `;
@@ -881,15 +1099,22 @@ const LogoutIcon = styled.span`
 const WalletConnectContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   background-color: rgba(52, 152, 219, 0.08);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 12px 15px;
   border: 1px solid rgba(52, 152, 219, 0.2);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(52, 152, 219, 0.12);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+  }
 `;
 
 const ConnectIcon = styled.span`
-  font-size: 16px;
+  font-size: 20px;
+  color: #3498db;
 `;
 
 const MainContent = styled.div`
@@ -905,7 +1130,7 @@ const PlaceholderText = styled.div`
   color: #95a5a6;
   font-size: 14px;
   text-align: center;
-  margin: 15px 0;
+  margin-bottom: 20px;
   font-style: italic;
 `;
 
@@ -922,16 +1147,20 @@ const Grid = styled.div`
   border-radius: 8px;
   padding: 4px;
   background-color: #f9f9fb;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 `;
 
 const Tile = styled.div`
-  background-color: ${props => props.color};
-  border: ${props => props.$isSelected ? '2px solid #000' : '1px solid #ccc'};
+  background-color: transparent;
+  border: ${props => props.$isSelected ? '2px solid #000' : '1px solid #ddd'};
   cursor: ${props => props.$purchased ? 'not-allowed' : 'pointer'};
   transition: all 0.2s ease;
   position: relative;
   border-radius: 3px;
   box-shadow: ${props => props.$isSelected ? '0 0 8px rgba(0, 0, 0, 0.3)' : 'none'};
+  overflow: hidden;
 
   &:hover {
     transform: ${props => props.$purchased ? 'none' : 'scale(1.05)'};
@@ -947,7 +1176,19 @@ const TileImage = styled.img`
   position: absolute;
   top: 0;
   left: 0;
-  opacity: 0.7;
+  opacity: ${props => props.$hasColor ? 0.6 : 1}; // 只有在存在颜色时才降低透明度
+  mix-blend-mode: normal;
+  border-radius: 3px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  transform: translateZ(0);
+  z-index: 2;
+  pointer-events: none;
+  filter: contrast(1.05);
 `;
 
 const ControlPanel = styled.div`
@@ -1182,9 +1423,12 @@ const NotConnectedContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   width: 100%;
-  padding: 10px 0;
+  padding: 25px 0 15px;
+  background-color: rgba(52, 152, 219, 0.05);
+  border-radius: 12px;
+  border: 1px dashed rgba(52, 152, 219, 0.3);
 `;
 
 // Toast样式组件
@@ -1482,6 +1726,95 @@ const TwitterTipHighlight = styled.div`
     content: "💡";
     margin-right: 5px;
   }
+`;
+
+const WalletIcon = styled.span`
+  font-size: 18px;
+  margin-right: 8px;
+`;
+
+const EnhancedConnectButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+  
+  &:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+  }
+`;
+
+const WalletPromptIcon = styled.div`
+  font-size: 40px;
+  color: #3498db;
+  margin-bottom: 10px;
+`;
+
+const WalletPromptTitle = styled.div`
+  font-size: 18px;
+  font-weight: 600;
+  color: #2980b9;
+  margin-bottom: 10px;
+`;
+
+const WalletFeaturesList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const WalletFeature = styled.li`
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  text-align: left;
+  
+  span {
+    font-weight: bold;
+    color: #2980b9;
+    width: 18px;
+    height: 18px;
+    background-color: #e1f0fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+`;
+
+const FeatureIcon = styled.span`
+  font-size: 18px;
+  color: #2980b9;
+`;
+
+const FeatureText = styled.span`
+  flex: 1;
+  font-size: 14px;
+  color: #555;
 `;
 
 export default App;
