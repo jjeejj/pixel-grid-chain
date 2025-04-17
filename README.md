@@ -31,6 +31,12 @@ Pixel Grid Chain 是一个去中心化应用程序(dApp)，允许用户购买虚
 - 支持钱包连接与区块链交互
 - 实时显示所有已购买格子的状态
 
+## 支持的钱包
+
+- MetaMask
+- Coinbase Wallet
+- Rabby Wallet
+
 ## 安装与运行
 
 ### 智能合约部分
@@ -80,7 +86,7 @@ npm run build
 
 ## 使用方法
 
-1. 连接您的加密钱包 (MetaMask 等)
+1. 连接您的加密钱包 (MetaMask、Coinbase Wallet 或 Rabby Wallet)
 2. 在网格上选择一个空闲的像素格子
 3. 在弹出的表单中选择颜色并输入图片 URL
 4. 确认支付 0.01 MON (Monad 测试网代币)

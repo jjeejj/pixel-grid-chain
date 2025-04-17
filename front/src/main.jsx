@@ -18,6 +18,7 @@ import {
   metaMaskWallet,
   coinbaseWallet,
   walletConnectWallet,
+  rabbyWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { hardhat } from 'wagmi/chains';
@@ -52,6 +53,7 @@ const availableWallets = [
   injectedWallet({ chains }),
   metaMaskWallet({ chains, projectId }),
   coinbaseWallet({ chains, appName: '像素格子' }),
+  rabbyWallet({ chains, projectId }),
 ];
 
 const connectors = connectorsForWallets([
