@@ -568,7 +568,6 @@ const App = () => {
                           if (!connected) {
                             return (
                               <EnhancedConnectButton onClick={openConnectModal} type="button">
-                                <WalletIcon>👛</WalletIcon>
                                 Connect Wallet
                               </EnhancedConnectButton>
                             );
@@ -783,7 +782,6 @@ const App = () => {
                 </PurchaseContainer>
               ) : (
                 <NotConnectedContainer>
-                  <WalletPromptIcon>👛</WalletPromptIcon>
                   <WalletPromptTitle>Connect Your Wallet</WalletPromptTitle>
                   <PlaceholderText>Please connect your wallet to buy tiles</PlaceholderText>
                   <ConnectButton.Custom>
@@ -816,7 +814,6 @@ const App = () => {
                         >
                           {!connected && (
                             <EnhancedConnectButton onClick={openConnectModal} type="button">
-                              <WalletIcon>👛</WalletIcon>
                               Connect Wallet
                             </EnhancedConnectButton>
                           )}
@@ -1728,11 +1725,6 @@ const TwitterTipHighlight = styled.div`
   }
 `;
 
-const WalletIcon = styled.span`
-  font-size: 18px;
-  margin-right: 8px;
-`;
-
 const EnhancedConnectButton = styled.button`
   display: flex;
   align-items: center;
@@ -1740,23 +1732,23 @@ const EnhancedConnectButton = styled.button`
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 12px 20px;
-  font-size: 16px;
+  border-radius: 8px;
+  padding: 8px 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
   
   &:hover {
     background-color: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
   }
   
   &:active {
     transform: translateY(0);
-    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
   }
 `;
 
