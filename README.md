@@ -20,6 +20,7 @@ PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以�
 | Web3连接 | wagmi、RainbowKit | 简化钱包连接流程 |
 | 合约交互 | viem | 处理智能合约调用 |
 | 区块链网络 | Monad | 存储数字资产 |
+| 合约开发 | Foundry | 智能合约开发框架 |
 
 ## 安装与运行
 
@@ -35,9 +36,10 @@ PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以�
    cd front
    npm install
    
-   # 安装智能合约依赖
-   cd ../contracts
-   npm install
+   # 安装Foundry（如果尚未安装）
+   cd ../src
+   curl -L https://foundry.paradigm.xyz | bash
+   foundryup
    ```
 
 3. **启动开发服务器**
@@ -48,9 +50,9 @@ PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以�
 
 4. **部署智能合约(可选)**
    ```bash
-   # 在contracts目录下
-   npx hardhat compile
-   npx hardhat deploy --network <your-network>
+   # src
+   forge build
+   forge script script/BuyEarth.s.sol --rpc-url <your-network-rpc> --private-key <your-private-key> --broadcast
    ```
 
 ## 使用指南
@@ -69,13 +71,6 @@ PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以�
 3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 打开一个Pull Request
-
-## 联系方式
-
-如有任何问题或建议，请通过以下方式联系我们：
-
-- 项目仓库: [GitHub](https://github.com/yourusername/pixel-grid-chain)
-- 电子邮件: your.email@example.com
 
 ## 许可证
 

@@ -4,7 +4,7 @@
 
 Monad是一个高性能的Layer-1区块链平台，专为解决以太坊的可扩展性问题而设计。它采用了创新的状态管理方法和优化的执行环境，使开发者能够构建高吞吐量的去中心化应用。作为一个兼容EVM（以太坊虚拟机）的公链，Monad保留了以太坊的开发便利性，同时显著提升了交易处理速度和降低了Gas费用。
 
-再 OpenBuild 推出了 [Monad 101 Bootcamp](https://openbuild.xyz/learn/challenges/2060691796) 后积极参与 再老师的指导下，开发了基于Monad的像素画板Pixel Grid
+OpenBuild 推出了 [Monad 101 Bootcamp](https://openbuild.xyz/learn/challenges/2060691796) 后积极参与 再老师的指导下，开发了基于Monad的像素画板Pixel Grid
 
 ## 项目概述
 
