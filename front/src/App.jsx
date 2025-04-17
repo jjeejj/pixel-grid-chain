@@ -5,6 +5,7 @@ import { parseEther } from 'viem';
 import styled from 'styled-components';
 import './App.css';
 import { getContractConfig } from './config';
+import { getAvatarUrl, getAvatarFromUIAvatars, generateLetterAvatar, getAvatarUrlAsync } from './utils/avatarUtils';
 
 // BuyEarth合约ABI
 import contractABI from './abi.json'; // 正确导入ABI
@@ -63,6 +64,15 @@ const App = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { chain } = useNetwork(); // 获取当前连接的链
+  
+  // 社交媒体用户名状态
+  const [platform, setPlatform] = useState("github"); // 默认为GitHub
+  const [username, setUsername] = useState("");
+  // 预览状态
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+  // Twitter头像获取状态
+  const [twitterFetchFailed, setTwitterFetchFailed] = useState(false);
   
   // Toast状态
   const [toast, setToast] = useState({
@@ -164,6 +174,138 @@ const App = () => {
   // 处理图片URL输入变化
   const handleImageUrlChange = (e) => {
     setImageUrl(e.target.value);
+  };
+
+  // 处理社交媒体平台选择
+  const handlePlatformChange = (e) => {
+    setPlatform(e.target.value);
+    // 当切换平台时重置预览
+    setShowPreview(false);
+    // 重置Twitter获取失败状态
+    setTwitterFetchFailed(false);
+  };
+
+  // 处理社交媒体用户名输入
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    // 当用户名更改时重置预览
+    setShowPreview(false);
+  };
+
+  // 重置预览
+  const resetPreview = () => {
+    setShowPreview(false);
+    setPreviewUrl("");
+  };
+
+  // 获取头像URL
+  const handleGetAvatarUrl = async () => {
+    if (!username) {
+      showToast("请输入用户名或URL", "error");
+      return;
+    }
+    
+    // 重置Twitter获取状态
+    if (platform === 'twitter') {
+      setTwitterFetchFailed(false);
+    }
+    
+    try {
+      let avatarUrl;
+      
+      // 处理自定义URL
+      if (platform === "custom") {
+        // 检查是否是有效的URL或Twitter图片路径
+        if (username.includes('pbs.twimg.com/profile_images')) {
+          // 这是Twitter头像URL
+          avatarUrl = username;
+          if (!username.startsWith('http')) {
+            avatarUrl = `https://${username.replace(/^\/+/, '')}`;
+          }
+          showToast("检测到Twitter头像URL", "info");
+        } else if (!isValidUrl(username)) {
+          showToast("请输入有效的URL", "error");
+          return;
+        } else {
+          avatarUrl = username;
+        }
+        setShowPreview(true);
+      } else {
+        // 显示加载中提示
+        if (platform === 'twitter') {
+          showToast("正在尝试获取Twitter头像，请稍候...", "info");
+        } else {
+          showToast(`正在获取${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像...`, "info");
+        }
+        
+        // 使用社交媒体API获取头像 - 异步方式
+        try {
+          // 使用异步方法获取头像
+          avatarUrl = await getAvatarUrlAsync(platform, username);
+          
+          // 检查Twitter头像获取是否成功
+          if (platform === 'twitter' && !avatarUrl) {
+            setTwitterFetchFailed(true);
+            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+            return;
+          }
+        } catch (error) {
+          console.error("头像获取失败:", error);
+          
+          if (platform === 'twitter') {
+            setTwitterFetchFailed(true);
+            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+            return;
+          }
+          
+          // 仅为非Twitter平台使用备选方案
+          avatarUrl = getAvatarFromUIAvatars(username, platform);
+        }
+        
+        // 如果头像获取失败，直接返回
+        if (!avatarUrl) {
+          if (platform === 'twitter') {
+            setTwitterFetchFailed(true);
+            showToast("获取Twitter头像失败，请尝试手动获取", "error");
+          } else {
+            showToast(`获取${platform === 'github' ? 'GitHub' : ''}头像失败`, "error");
+          }
+          return;
+        }
+        
+        setShowPreview(true);
+      }
+      
+      setPreviewUrl(avatarUrl);
+      setImageUrl(avatarUrl);
+      showToast(
+        platform === "custom" 
+          ? "已成功获取自定义图片" 
+          : `已成功获取${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像`, 
+        "info"
+      );
+    } catch (error) {
+      console.error("获取头像URL失败:", error);
+      
+      if (platform === 'twitter') {
+        setTwitterFetchFailed(true);
+        showToast("获取Twitter头像失败，请尝试手动获取", "error");
+      } else {
+        showToast("获取头像URL失败，请尝试其他平台或自定义URL", "error");
+      }
+      
+      setShowPreview(false);
+    }
+  };
+  
+  // 验证URL是否有效
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
   };
 
   // 处理方块点击
@@ -353,6 +495,106 @@ const App = () => {
                       onChange={handleImageUrlChange}
                     />
                   </InputContainer>
+
+                  {/* 社交媒体头像获取部分 */}
+                  <SocialAvatarContainer>
+                    <SocialAvatarTitle>使用社交媒体头像</SocialAvatarTitle>
+                    <SocialInputGroup>
+                      <SocialSelect 
+                        value={platform} 
+                        onChange={handlePlatformChange}
+                      >
+                        <option value="github">GitHub</option>
+                        <option value="twitter">X (Twitter)</option>
+                        <option value="custom">自定义URL</option>
+                      </SocialSelect>
+                      <SocialInput
+                        type="text"
+                        placeholder={platform === 'custom' ? '输入图片URL' : `输入${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 用户名`}
+                        value={username}
+                        onChange={handleUsernameChange}
+                      />
+                      <SocialButton onClick={handleGetAvatarUrl}>
+                        获取头像
+                      </SocialButton>
+                    </SocialInputGroup>
+                    
+                    {/* 平台提示信息 - 只在获取失败时显示 */}
+                    {platform === 'twitter' && twitterFetchFailed && (
+                      <PlatformNote>
+                        <TwitterTipHeading>🔍 获取失败，请尝试手动方法</TwitterTipHeading>
+                        <TwitterTipText>
+                          Twitter头像获取失败，请按照以下步骤手动获取:
+                        </TwitterTipText>
+                        <TwitterStepList>
+                          <TwitterStep>
+                            <span>1.</span> 
+                            <TwitterLinkButton 
+                              onClick={() => window.open(`https://x.com/${username}/photo`, '_blank')}
+                              disabled={!username}
+                            >
+                              打开Twitter照片页面
+                            </TwitterLinkButton>
+                          </TwitterStep>
+                          <TwitterStep>
+                            <span>2.</span> 在照片页面上右键图片 → 选择"复制图片地址"
+                          </TwitterStep>
+                          <TwitterStep>
+                            <span>3.</span> 
+                            <TwitterActionButton
+                              onClick={() => {
+                                setPlatform('custom');
+                                showToast('已切换到自定义URL模式，请粘贴Twitter图片地址', 'info');
+                              }}
+                            >
+                              切换到自定义URL模式
+                            </TwitterActionButton>
+                          </TwitterStep>
+                          <TwitterStep>
+                            <span>4.</span> 粘贴刚才复制的图片地址 → 点击"获取头像"
+                          </TwitterStep>
+                          <TwitterTipHighlight>
+                            图片地址应以 "pbs.twimg.com/profile_images" 开头
+                          </TwitterTipHighlight>
+                        </TwitterStepList>
+                      </PlatformNote>
+                    )}
+                    
+                    {/* 预览区域 */}
+                    {showPreview && (
+                      <PreviewContainer>
+                        <PreviewHeader>
+                          <PreviewTitle>预览</PreviewTitle>
+                          <ClosePreviewButton onClick={resetPreview}>✕</ClosePreviewButton>
+                        </PreviewHeader>
+                        <ImagePreview>
+                          <PreviewImage 
+                            src={previewUrl} 
+                            alt="头像预览"
+                            onError={() => {
+                              showToast("图片加载失败", "error");
+                              setShowPreview(false);
+                            }}
+                          />
+                        </ImagePreview>
+                        <PreviewInfo>
+                          <PreviewText>
+                            {platform === 'custom' ? '自定义图片' : 
+                              `${platform === 'github' ? 'GitHub' : 'X(Twitter)'} 头像: ${username}`}
+                          </PreviewText>
+                          <ApplyButton 
+                            onClick={() => {
+                              setImageUrl(previewUrl);
+                              showToast("已应用到图片URL", "info");
+                            }}
+                          >
+                            应用
+                          </ApplyButton>
+                        </PreviewInfo>
+                      </PreviewContainer>
+                    )}
+                  </SocialAvatarContainer>
+                  
                   <BuyButton
                     onClick={handleBuyEarth}
                     disabled={selectedTile === null || isLoading}
@@ -373,6 +615,99 @@ const App = () => {
     </Container>
   );
 };
+
+// 预览相关样式组件
+const PreviewContainer = styled.div`
+  margin-top: 15px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e6f2ff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+`;
+
+const PreviewHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const PreviewTitle = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #2980b9;
+`;
+
+const ClosePreviewButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
+  }
+`;
+
+const ImagePreview = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+`;
+
+const PreviewImage = styled.img`
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e6f2ff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const PreviewInfo = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+`;
+
+const PreviewText = styled.div`
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+`;
+
+const ApplyButton = styled.button`
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
 
 // 样式组件
 const Container = styled.div`
@@ -915,6 +1250,237 @@ const ToastCloseButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.35);
+  }
+`;
+
+// 社交媒体头像样式组件
+const SocialAvatarContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f7fbff;
+  border-radius: 8px;
+  border: 1px dashed #b8daff;
+`;
+
+const SocialAvatarTitle = styled.div`
+  font-size: 15px;
+  font-weight: 500;
+  color: #2980b9;
+  margin-bottom: 12px;
+  position: relative;
+  padding-left: 22px;
+  
+  &:before {
+    content: "👤";
+    position: absolute;
+    left: 0;
+    top: -1px;
+  }
+`;
+
+const SocialInputGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  width: 100%;
+`;
+
+const SocialSelect = styled.select`
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  width: 120px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+`;
+
+const SocialInput = styled.input`
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  flex: 1;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+`;
+
+const SocialButton = styled.button`
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(46, 204, 113, 0.2);
+
+  &:hover {
+    background-color: #27ae60;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(46, 204, 113, 0.25);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(46, 204, 113, 0.2);
+  }
+`;
+
+const PlatformNote = styled.div`
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  line-height: 1.5;
+  background-color: #f8f9fa;
+  border: 1px dashed #bbb;
+  border-radius: 8px;
+  padding: 10px;
+  width: 100%;
+`;
+
+const TwitterTipHeading = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: #2980b9;
+  margin-bottom: 10px;
+  width: 100%;
+`;
+
+const TwitterTipText = styled.div`
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  width: 100%;
+  text-align: left;
+`;
+
+const TwitterStepList = styled.div`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const TwitterStep = styled.div`
+  font-size: 13px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  text-align: left;
+  
+  span {
+    font-weight: bold;
+    color: #2980b9;
+    width: 18px;
+    height: 18px;
+    background-color: #e1f0fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+`;
+
+const TwitterLinkButton = styled.button`
+  background: #1DA1F2;
+  border: none;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #0c85d0;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  &::before {
+    content: "🔗";
+    margin-right: 4px;
+    font-size: 12px;
+  }
+`;
+
+const TwitterActionButton = styled.button`
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(46, 204, 113, 0.2);
+
+  &:hover {
+    background-color: #27ae60;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.25);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(46, 204, 113, 0.2);
+  }
+`;
+
+const TwitterTipHighlight = styled.div`
+  background-color: #f0f7fb;
+  border-left: 4px solid #3498db;
+  padding: 8px 12px;
+  margin-top: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2980b9;
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  
+  &:before {
+    content: "💡";
+    margin-right: 5px;
   }
 `;
 
