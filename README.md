@@ -26,7 +26,7 @@ PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以�
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/yourusername/pixel-grid-chain.git
+   git clone https://github.com/jjeejj/pixel-grid-chain.git
    cd pixel-grid-chain
    ```
 

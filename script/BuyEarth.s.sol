@@ -8,7 +8,8 @@ contract BuyEarthScript is Script {
     function setUp() public {}
 
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PT_ACCOUNT_PRIVATE_KEY");
+        console.log("Start deploy BuyEarth Contract");
+        uint256 deployerPrivateKey = vm.envUint("LOCAL_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         BuyEarth buyEarth = new BuyEarth();
