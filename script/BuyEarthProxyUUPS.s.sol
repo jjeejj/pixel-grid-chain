@@ -12,7 +12,7 @@ import "../src/BuyEarthProxy.sol";
  */
 contract BuyEarthProxyUUPSScript is Script {
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("LOCAL_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PT_ACCOUNT_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         
         vm.startBroadcast(deployerPrivateKey);
