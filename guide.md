@@ -32,6 +32,7 @@ Pixel Grid是一个基于区块链的像素艺术平台，具有以下核心功�
 | 样式处理 | Styled Components | 组件级CSS样式 |
 | Web3连接 | wagmi、RainbowKit | 简化钱包连接流程 |
 | 合约交互 | viem | 处理智能合约调用 |
+| 合约开发框架 | Foundry | 智能合约开发 |
 | 区块链网络 | Monad Testnet | 存储数字资产 |
 
 ## 核心功能实现
