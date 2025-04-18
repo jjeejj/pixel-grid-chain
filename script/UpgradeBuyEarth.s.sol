@@ -17,7 +17,7 @@ interface IProxyUpgrade {
 contract UpgradeBuyEarthScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("LOCAL_PRIVATE_KEY");
-        address proxyAddress = 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82;
+        address proxyAddress = 0x68B1D87F95878fE05B998F19b66F4baba5De1aed;
 
         address deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);
@@ -31,18 +31,15 @@ contract UpgradeBuyEarthScript is Script {
             "New BuyEarth logic contract deployed at:",
             address(newImplementation)
         );
-
         // 检查当前实现
-        IProxyUpgrade proxy = IProxyUpgrade(proxyAddress);
-
-        // 通过proxyAddress合约执行升级
+        BuyEarth proxy = BuyEarth(proxyAddress);
         console.log(
             "Upgrading proxy",
             proxyAddress,
             "to new logic",
             address(newImplementation)
         );
-        proxy.upgradeTo(address(newImplementation));
+        proxy.upgradeToAndCall(address(newImplementation), "");    
 
         console.log("Upgrade successful!");
 

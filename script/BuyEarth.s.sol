@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../src/BuyEarth.sol";
 
+// 这是单独部署逻辑合约的
 contract BuyEarthScript is Script {
     function setUp() public {}
 
