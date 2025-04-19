@@ -2,6 +2,12 @@
 
 PixelGrid是一个基于区块链的像素艺术创作平台，让用户可以购买、自定义并拥有网格中的像素方块。每个方块都可以设置颜色和上传图片，所有权记录在区块链上，确保数字资产的真实性和永久性。
 
+体验地址：[https://pixel-grid-chain.vercel.app/](https://pixel-grid-chain.vercel.app/)
+
+二期项目地址：[https://github.com/jjeejj/nads-pixel-world](https://github.com/jjeejj/nads-pixel-world)
+
+二期项目预览地址：[https://nads-pixel-world.vercel.app/](https://nads-pixel-world.vercel.app/)
+
 ## 项目特点
 
 - **区块链所有权**: 每个像素方块的所有权通过智能合约记录在区块链上

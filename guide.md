@@ -19,6 +19,10 @@ Pixel Grid是一个基于区块链的像素艺术平台，具有以下核心功�
 
 体验地址：<https://pixel-grid-chain.vercel.app/>
 
+二期项目地址：<https://github.com/jjeejj/nads-pixel-world>
+
+二期项目预览地址：<https://nads-pixel-world.vercel.app/>
+
 ![Pixel Grid界面示例](./image/demo.png)
 
 ## 技术栈详解
